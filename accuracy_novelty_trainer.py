@@ -6,7 +6,7 @@ from utils import *
 import random
 import tensorflow as tf
 import copy
-
+import argparse
 
 class Nov_Distri_Saver():
     def __init__(self):
@@ -322,8 +322,8 @@ class RecommendSys():
         self.EVERY_N_ITERATIONS = EVERY_N_ITERATIONS
         self.MAX_ITERATIONS = MAX_ITERATIONS
 
-        nov_distri_path =  nov_distri_path
-        model_path =  model_path
+        nov_distri_path =  "./"+nov_distri_path
+        model_path =  "./"+model_path
         self.process_train(is_early_stopping)
         if is_early_stopping==1:
             nov_distri_path+="_es"
@@ -437,8 +437,7 @@ class RecommendSys():
             saver = tf.train.Saver()
 
             try:
-                #saver.restore(session, model_path)
-                pass
+                saver.restore(session, model_path)
             except:
                 #print()
                 pass
@@ -464,9 +463,8 @@ class RecommendSys():
                         if stop_flg == 1:
                             break
                     else:
-                        #model_path = saver.save(session, model_path)
-                        #print('current model save in', model_path)
-                        pass
+                        model_path = saver.save(session, model_path)
+                        print('current model save in', model_path)
                         
             user_list = []
             item_list = []
@@ -505,9 +503,9 @@ class RecommendSys():
                 stop_flg=self.update_loss_win(loss)
             print({"loss":loss,"best_loss":self.best_loss,"best_iter":self.best_iter,"stop_win":self.stop_loss})
             if stop_flg==0:
-                #save_path = saver.save(session, save_path)
-                #print('current model save in', save_path)
-                pass
+                print(save_path)
+                saver.save(session, save_path)
+                print('current model save in', save_path)
             return stop_flg
 
     def __init__(self, util):
@@ -524,6 +522,13 @@ class RecommendSys():
 
 
 if __name__=='__main__':
+
+    parse = argparse.ArgumentParser()
+    parse.add_argument("-beta",type=float)
+
+    args = parse.parse_args()
+
+
     from movielens_feature import MovieLens
     from accuracy_novelty_preprocessor import DataSetProcesser
     from accuracy_novelty_util import RecommendSysUtil
@@ -533,9 +538,11 @@ if __name__=='__main__':
     util=RecommendSysUtil(dataset)
     sys=RecommendSys(util)
 
-    beta_list=[0.0]
-    print(beta_list)
+    beta_list=[args.beta]
     result_list=[]
+
+    import os
+    os.system("rm ml_K*")
 
     for beta in list(beta_list):
         print(beta)
