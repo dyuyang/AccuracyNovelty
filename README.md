@@ -145,9 +145,11 @@ parameters:
 7. topk(int): size of topK recommendation list.
 8. limit(int): try how many times to find incorrect negtive sample while training.
 9. early_stop_method(function): if you want to use early stopping method to find best epoch, you should custom stopping function.
-   "early_stop_method" expects a callable with following function: func(epoch, train_loss_history,val_loss_history) Returns(stop_flg, best_epoch). train_loss_history: list of average training batch loss of every epoch. val_loss_history: list of validation dataset loss of every epoch. 
-stop_flg: whether or not stop training.
-best_epoch: best epochs.
+   "early_stop_method" expects a callable with following function: func(epoch, train_loss_history,val_loss_history) Returns(stop_flg, best_epoch). 
+   train_loss_history: list of average training batch loss of every epoch. 
+   val_loss_history: list of validation dataset loss of every epoch. 
+   stop_flg: whether or not stop training.
+   best_epoch: best epochs.
 ```
 
 
