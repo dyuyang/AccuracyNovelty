@@ -2,6 +2,9 @@ import numpy as np
 import random
 from utils import *
 class DataSetProcesser():
+    
+
+    ## transform data into train-test timeline (see in paper)
     def calculate_data(self):
         self.list_uid = self.df_userinfo.uid
         self.list_itemid = self.df_iteminfo.itemid
@@ -27,7 +30,6 @@ class DataSetProcesser():
             itemid = int(row["itemid"])
 
             self.ratings_byitemid[itemid][uid] = rating
-            #self.rating_bypair[uid][itemid] = rating
             if rating > self.rating_threshold:
                 self.all_posuser_byitemid[itemid].append(uid)
                 self.all_positem_byuid[uid].append(itemid)
@@ -35,6 +37,7 @@ class DataSetProcesser():
                 self.all_neguser_byitemid[itemid].append(uid)
                 self.all_negitem_byuid[uid].append(itemid)
 
+        ## statistics which would be used in tensorflow graph, see in 'accuracy_novelty_train.py'
         self._USER_SIZE_ONLY_NUM = len(self.user_numerical_attr)
         self._USER_SIZE_OF_FIELDS = []
         for feat in self.df_userinfo.columns:
@@ -64,6 +67,7 @@ class DataSetProcesser():
                                                                    _ITEM_SIZE_ONLY_NUM]
         self._ITEM_SIZE_BIN = sum(self._ITEM_SIZE_OF_FIELDS)
 
+    ## transform user-item interaction history to train and test timeline
     def split_dict(self, dic,ratio):
         seed = self.seed
         dic1 = {}
@@ -80,9 +84,11 @@ class DataSetProcesser():
                 dic2[ky] = []
         return dic1, dic2
 
+    ## merge two dict
     def merge_dict(self, dic1, dic2):
         return {ky: list(set(dic1[ky]) | set(dic2[ky])) for ky in dic1}
 
+    ## transform interaction history indexed by uid to history indexed to itemid (uid->itemid) or (itemid->uid)
     def reverse_dict(self, dict_byuid):
         result = {itemid: [] for itemid in self.list_itemid}
         for uid in dict_byuid:
@@ -127,10 +133,10 @@ class DataSetProcesser():
         self.user_numerical_attr = movielens.user_numerical_attr
         self.item_numerical_attr = movielens.item_numerical_attr
         self.calculate_data()
+
+        ## drop some useless features
         for attr in self.df_userinfo:
             if attr not in self.user_numerical_attr:
-                #print(attr)
-                #self.df_userinfo[attr] = self.df_userinfo[attr].astype('str')
                 pass
             else:
                 df = self.df_userinfo[attr].copy()
@@ -138,7 +144,6 @@ class DataSetProcesser():
                 self.df_userinfo[attr] = df
         for attr in self.df_iteminfo:
             if attr not in self.item_numerical_attr:
-                #self.df_iteminfo[attr] = self.df_iteminfo[attr].astype('str')
                 pass
             else:
                 df = self.df_iteminfo[attr].copy()

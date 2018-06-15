@@ -67,6 +67,7 @@ class RecommendSysUtil():
                 #print(attr,onehot_by_attr[attr])
         return onehot_by_attr
 
+    ## vectorize user and item is time cosuming, so save these vectors
     def save_vec(self):
         self.uid_to_vec = {}
         self.itemid_to_vec = {}
@@ -82,6 +83,7 @@ class RecommendSysUtil():
                 print("save item vec", itemid, '/', sz)
             self.itemid_to_vec[itemid] = self.item_vectorize(itemid)
           
+    ## calculating distance is time cosuming, so save distances
     def save_distance(self):
         self.ratings_byitemid=[]
         for itemid in self.dataset.list_itemid:

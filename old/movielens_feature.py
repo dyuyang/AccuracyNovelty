@@ -63,14 +63,23 @@ class MovieLens:
         self.df_userinfo = pd.concat([df_numeric, df_obj], axis=1)
 
     def __init__(self):
+        
+        ## postive if rating >3
         self.rating_threshold = 3
+
+        ## transform data to pandas dataframe 
         self.load_raw_data()
+
+        ## id starts from zero
         self.df_iteminfo["itemid"]=self.df_iteminfo["itemid"]-1
         self.df_userinfo["uid"]=self.df_userinfo["uid"]-1
         self.df_rating["itemid"]=self.df_rating["itemid"]-1
         self.df_rating["uid"]=self.df_rating["uid"]-1
+
+        ## fill na and normalize numerical feature
         self.feature_engineering()
         
+        ## feature which is used to train model
         self.user_numerical_attr =  ["age"]
         self.item_numerical_attr = ["year", "month", "day"]
 

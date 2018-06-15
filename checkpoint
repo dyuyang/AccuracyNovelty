@@ -1,0 +1,2 @@
+model_checkpoint_path: "ml_K_600_beta_0.0_vald2_es"
+all_model_checkpoint_paths: "ml_K_600_beta_0.0_vald2_es"

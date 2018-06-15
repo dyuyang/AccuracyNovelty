@@ -477,20 +477,33 @@ class RecommendSys():
                 result = {}
             return result, reward0, reward1, agg_div, entro_div
     
-    def update_loss_win(self,loss):
+    def update_loss_win(self,loss,x=3,y=2):
         self.stop_loss = self.stop_loss[1:]
         self.stop_loss.append(loss)
-        l1, l2, l3, l4, l5 = self.stop_loss
-        return (l5 >= l4 and l5 >= l3 and l5 >= l2 and l5 >= l1) and (l4 >= l3 and l4 >= l2 and l4 >= l1)
+        for k in range(y-1):
+            if self.stop_loss[k+x]>self.stop_loss[k+x+1]:
+                return 0
+        lst=[(idx,loss) for idx,loss in enumerate(self.stop_loss)]
+        lst=sorted(lst,key=lambda x: x[1])
+        for new_idx in range(x):
+            idx=lst[new_idx][0]
+            if idx>=x:
+                return 0
+        return 1
+
+            
+    
     def long_not_improve(self,iter,loss):
         self.cur_iter=iter
         if loss<self.best_loss:
             self.best_loss=loss
             self.best_iter=iter
         return self.cur_iter-self.best_iter>=400
-    def early_stop(self, iter, loss, saver, session, save_path):
+
+    ### this early_stopping can be reimplemented by yourself according to demand
+    def early_stop(self, iter, loss, saver, session, save_path,x=3,y=2):
         if iter == 0:
-            self.stop_loss = [9999, 9999, 9999, 9999, 9999]
+            self.stop_loss = [9999 for k in range(x+y)]
             self.best_loss=9999
             self.best_iter=0
             self.cur_iter=0
@@ -500,7 +513,7 @@ class RecommendSys():
             if early_stop_flg==0:
                 stop_flg = self.long_not_improve(iter,loss)
             else:
-                stop_flg=self.update_loss_win(loss)
+                stop_flg=self.update_loss_win(loss,x=x,y=y)
             print({"loss":loss,"best_loss":self.best_loss,"best_iter":self.best_iter,"stop_win":self.stop_loss})
             if stop_flg==0:
                 print(save_path)
@@ -524,6 +537,8 @@ class RecommendSys():
 if __name__=='__main__':
 
     parse = argparse.ArgumentParser()
+
+    ## beta represents novelty importance
     parse.add_argument("-beta",type=float)
 
     args = parse.parse_args()
@@ -532,9 +547,20 @@ if __name__=='__main__':
     from movielens_feature import MovieLens
     from accuracy_novelty_preprocessor import DataSetProcesser
     from accuracy_novelty_util import RecommendSysUtil
-    movielens=MovieLens()
-    dataset=DataSetProcesser(movielens,0.7)
 
+
+    movielens=MovieLens()
+    '''
+    no matter dataset is movielens or not, 
+    this object must have these attributes:
+        df_userinfo,
+        df_iteminfo,
+        rating_threshold
+        df_rating
+        user_numerical_attr
+        item_numerical_attr
+    '''
+    dataset=DataSetProcesser(movielens,0.7)
     util=RecommendSysUtil(dataset)
     sys=RecommendSys(util)
 
@@ -546,12 +572,18 @@ if __name__=='__main__':
 
     for beta in list(beta_list):
         print(beta)
+        ## path to save tf model
         s1="ml_nov_distri_beta%.1f"%(beta)
+        ## path to save novelty distribution
         s2="ml_K_600_beta_%.1f_vald2"%(beta)
+
+        ## early-stopping
         result,reward0, reward1, agg_div, entro_div=sys.train(
         s1,s2,beta=beta,is_early_stopping=1,predict_pair=[],MAX_ITERATIONS=4000)
         # with open("maxiter_%.2f"%(beta),"w") as f:
         #     f.write(str(sys.cur_iter))
         # print('bestiter',sys.cur_iter)
+
+        ##full dataset training
         result,reward0, reward1, agg_div, entro_div=sys.train(
         s1,s2,beta=beta,is_early_stopping=0, predict_pair=[],MAX_ITERATIONS=sys.cur_iter)
