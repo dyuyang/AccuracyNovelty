@@ -1,22 +1,15 @@
-AccuracyNovelty
-=========
+# AccuracyNovelty
 
 This is the implementation of the paper "Trade-off Between Accuracy and Novelty in Recommender Systems".
 
-<<<<<<< HEAD
 ## Contents
-=======
-Table of contents
-=================
->>>>>>> origin/master
 
 1. Environment
 2. Example
 3. Run the Model
 4. API
 
-Environment
-=================
+## Environment
 
 Following environment is required (in python3).
 
@@ -36,8 +29,7 @@ pip install tqdm
 
 
 
-Example
-===
+## Example
 
 An example code of movielens is in "movielens_example.py"
 
@@ -45,8 +37,7 @@ If you want to run the code, you should first download dataset of [Movielens 100
 
 
 
-Run the Model
-=================
+## Run the Model
 
 First, construct recommender system.
 
@@ -92,8 +83,7 @@ resys.predict([(1,2),(2,3),(1,5)])
 
 
 
-API
-=================
+## API
 
 ```
 class NovResysClassifier(
