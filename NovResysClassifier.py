@@ -792,44 +792,44 @@ class NovResysClassifier(BaseEstimator, ClassifierMixin):
         return result
 
 
-# In[44]:
+# # In[44]:
 
 
-user_num_inds=[]
-item_num_inds=[]
-for idx,feat in enumerate(movielens.df_userinfo.columns):
-    if feat in movielens.user_numerical_attr:
-        user_num_inds.append(idx)
+# user_num_inds=[]
+# item_num_inds=[]
+# for idx,feat in enumerate(movielens.df_userinfo.columns):
+#     if feat in movielens.user_numerical_attr:
+#         user_num_inds.append(idx)
         
-for idx,feat in enumerate(movielens.df_iteminfo.columns):
-    if feat in movielens.item_numerical_attr:
-        item_num_inds.append(idx)
+# for idx,feat in enumerate(movielens.df_iteminfo.columns):
+#     if feat in movielens.item_numerical_attr:
+#         item_num_inds.append(idx)
     
 
 
-# In[45]:
+# # In[45]:
 
 
-resys=NovResysClassifier(0,0,
-                         movielens.df_userinfo.values,0,user_num_inds,
-                         movielens.df_iteminfo.values,0,item_num_inds,
-                        movielens.df_rating.values)
+# resys=NovResysClassifier(0,0,
+#                          movielens.df_userinfo.values,0,user_num_inds,
+#                          movielens.df_iteminfo.values,0,item_num_inds,
+#                         movielens.df_rating.values)
 
 
-# In[46]:
+# # In[46]:
 
 
-resys.preprocess()
+# resys.preprocess()
 
 
-# In[47]:
+# # In[47]:
 
 
-resys.precalculate()
+# resys.precalculate()
 
 
-# In[53]:
+# # In[53]:
 
 
-resys.fit(epochs=100)
+# resys.fit(epochs=100)
 

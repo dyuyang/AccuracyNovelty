@@ -1,12 +1,14 @@
+[TOC]
+
 # AccuracyNovelty
 
 This is the implementation of the paper "Trade-off Between Accuracy and Novelty in Recommender Systems".
 
-## Environment
 
-If you want to run the code, you should first download dataset of [Movielens 100K Dataset](https://grouplens.org/datasets/movielens/).
 
-Then, following environment is required (in python3).
+## 1. Environment
+
+Following environment is required (in python3).
 
 ```
 pip install scikit-learn
@@ -24,23 +26,26 @@ pip install tqdm
 
 
 
-## Example
+## 2. Example
 
 An example code of movielens is in "movielens_example.py"
 
+If you want to run the code, you should first download dataset of [Movielens 100K Dataset](https://grouplens.org/datasets/movielens/).
 
 
-## Run the Model
+
+## 3. Run the Model
 
 First, construct recommender system.
 
 ```
+from NovResysClassifier import NovResysClassifier
 resys=NovResysClassifier(0,0,
-                         movielens.df_userinfo.values,0,user_num_inds,
+                         user_info,0,user_num_inds,
 
-                         movielens.df_iteminfo.values,0,item_num_inds,
+                         item_info,0,item_num_inds,
 
-                        movielens.df_rating.values)
+                         ratings)
 ```
 
 Second, make preperation for calculation of novelty.
@@ -75,7 +80,7 @@ resys.predict([(1,2),(2,3),(1,5)])
 
 
 
-## API
+## 4. API
 
 ```
 class NovResysClassifier(
