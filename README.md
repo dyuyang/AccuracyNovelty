@@ -2,12 +2,12 @@
 
 This is the implementation of the paper "Trade-off Between Accuracy and Novelty in Recommender Systems".
 
-## Table of contents
+## Contents
 
-1. [Environment](#Environment)
-2. [Example](#Example)
-3. [Run the Model](#Run the Model)
-4. [API](#API)
+1. Environment
+2. Example
+3. Run the Model
+4. API
 
 ## Environment
 
