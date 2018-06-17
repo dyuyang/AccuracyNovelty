@@ -47,6 +47,17 @@ class NovResysClassifier(BaseEstimator, ClassifierMixin):
         self.ratio = test_size
         self.seed = random_state
         
+        if len(self.user_num_inds)==0:
+            tmp=np.reshape([0.0 for k in range(np.shape(self.user_info)[1])],(-1,1))
+            self.user_info=np.concatenate((self.user_info,),axis=1)
+            self.user_num_inds=[np.shape(self.user_info)[1]-1]
+        
+        if len(self.item_num_inds)==0:
+            tmp=np.reshape([0.0 for k in range(np.shape(self.item_info)[1])],(-1,1))
+            self.item_info=np.concatenate((self.item_info,),axis=1)
+            self.item_num_inds=[np.shape(self.item_info)[1]-1]
+
+
         for ind in range(np.shape(self.user_info)[1]):
             le=LabelEncoder()
             le.fit(self.user_info[:,ind])
@@ -480,6 +491,7 @@ class NovResysClassifier(BaseEstimator, ClassifierMixin):
             uid_list.append(uid)
             
         for uid in uid_list:
+
             pos_itemid = self.rng.choice(
                 self.train_positem_byuid[uid], p=self.pos_distr[uid])
             list_positemid.append(pos_itemid)
@@ -557,12 +569,12 @@ class NovResysClassifier(BaseEstimator, ClassifierMixin):
             self.train_positem_byuid_buffer=self.train_positem_byuid.copy()
             self.train_negitem_byuid_buffer=self.train_negitem_byuid.copy()
             
-            self.train_positem_byuid,self.val_positem_byuid=self._split_history(self.train_positem_byuid,5/7)
-            self.train_negitem_byuid,self.val_negitem_byuid=self._split_history(self.train_negitem_byuid,5/7)
+            self.train_positem_byuid,self.val_positem_byuid=self._split_history(self.train_positem_byuid,self.val_size)
+            self.train_negitem_byuid,self.val_negitem_byuid=self._split_history(self.train_negitem_byuid,self.val_size)
        
         elif es_stage==2:
-            self.train_positem_byuid=self.train_positem_byuid
-            self.train_negitem_byuid=self.train_negitem_byuid
+            self.train_positem_byuid=self.train_positem_byuid_buffer
+            self.train_negitem_byuid=self.train_negitem_byuid_buffer
             
     def _build(self):
         tf.set_random_seed(self.seed)
@@ -675,7 +687,7 @@ class NovResysClassifier(BaseEstimator, ClassifierMixin):
                     loss=loss_to_minimize)
 
     def _train(self):
-        self.pos_distr,self.neg_distr=self._load_distribution()
+
         gpu_options = tf.GPUOptions(visible_device_list='1')
         config = tf.ConfigProto(gpu_options=gpu_options)
         config.gpu_options.allow_growth = True
@@ -685,8 +697,10 @@ class NovResysClassifier(BaseEstimator, ClassifierMixin):
         if self.first_fit==1:
             self.sess.run(tf.global_variables_initializer())
             self.first_fit=0
+            
         
-        if early_stop_method==None:
+        if self.early_stop_method==None:
+            self.pos_distr,self.neg_distr=self._load_distribution()
             for e in range(self.epochs+1):
                 print('epochs %d'%(e))
                 if e!=0:
@@ -699,6 +713,7 @@ class NovResysClassifier(BaseEstimator, ClassifierMixin):
         else:
             best_epoch=0
             self._es_train(1)
+            self.pos_distr,self.neg_distr=self._load_distribution()
             self.val_hist=[]
             self.train_hist=[]
             best_epoch=0
@@ -712,16 +727,16 @@ class NovResysClassifier(BaseEstimator, ClassifierMixin):
                     for iter in range(int(np.ceil(len(self.uid_list)/self.batch_size))):
                         train_loss = self._train_a_batch(iter)
                         average_loss+=train_loss
-                        
+                        cnt+=1
                         print('Iteration', iter, 'Train_loss', train_loss)
-                self.val_hist.append(self._cal_val_loss())
-                cnt=cnt if cnt !=0 else 1
-                self.train_hist.append(average_loss/cnt)
-                flg,best_epoch=self.early_stop_method(e,self.train_hist,self.val_hist)
-                if flg == 1 : 
-                    break
+                    self.val_hist.append(self._cal_val_loss())
+                    self.train_hist.append(average_loss/cnt)
+                    flg,best_epoch=self.early_stop_method(self.train_hist,self.val_hist)
+                    if flg == 1 : 
+                        break
                 reward0, reward1, agg_div, entro_div = self.eval_performance()
             self._es_train(2)
+            self.pos_distr,self.neg_distr=self._load_distribution()
             for e in range(best_epoch+1):
                 best_epoch=e
                 print('epochs %d'%(e))
@@ -737,10 +752,12 @@ class NovResysClassifier(BaseEstimator, ClassifierMixin):
              novelty_importance=0.0,
              batch_size=128,learning_rate=0.006,nu=0.0001,
              embedding_size=600,epochs=0,
-             topk=10, limit=100,early_stop_method=None):
+             topk=10, limit=100,early_stop_method=None,val_size=0.0):
     
+        self.val_size=val_size
+        self.early_stop_method=early_stop_method
         self.beta = novelty_importance
-        self.rng=np.random.RandomState(SEED)
+        self.rng=np.random.RandomState(self.seed)
         self.batch_size = batch_size
         self.learning_rate = learning_rate
         self.nu = nu
@@ -756,15 +773,21 @@ class NovResysClassifier(BaseEstimator, ClassifierMixin):
             
         self._train()
         
+    def _trans_uid(self,user_list):
+        return self.uid_le.transform(user_list)
+
+    def _trans_itemid(self,item_list):
+            return self.itemid_le.transform(item_list)
+
     def recommend(self,user,top_N=10):
-        tmp = self._predict_mat_by_queue([user], self.itemid_list)
+        tmp = self._predict_mat_by_queue(self._trans_uid([user]), self.itemid_list)
         prob_arr = list(zip(self.itemid_list, tmp[0]))
         prob_arr = sorted(prob_arr, key=lambda d: -d[1])
         cnt = 0
         recommend_lst=[]
         for pair in prob_arr:
             itemid = pair[0]
-            if itemid not in self.train_rateditem_byuid[user]:
+            if itemid not in self.train_rateditem_byuid[uid]:
                 recommend_lst.append(itemid)
                 cnt += 1
                 if cnt == top_N:
@@ -777,59 +800,22 @@ class NovResysClassifier(BaseEstimator, ClassifierMixin):
         user_index={}
         item_index={}
         for (idx,(user, item)) in enumerate(predict_pair):
-            
-            if user not in user_index:
-                user_index[user]=idx
-            if item not in item_index:
-                item_index[item]=idx
+            uid=self._trans_uid([user])
+            itemid=self._trans_itemid([item])
+
+            if uid not in user_index:
+                user_index[uid]=idx
+            if itemid not in item_index:
+                item_index[itemid]=idx
                 
-            user_list.append(user)
-            item_list.append(item)
+            user_list.append(uid)
+            item_list.append(itemid)
         tmp = self._predict_mat_by_queue(user_list, item_list)
         result=[]
         for (user,item) in predict_pair:
-            result.append(tmp[user_index[user]][item_index[item]])
+            uid=self._trans_uid([user])
+            itemid=self._trans_itemid([item])
+            result.append(tmp[user_index[uid]][item_index[itemid]])
         return result
 
-
-# # In[44]:
-
-
-# user_num_inds=[]
-# item_num_inds=[]
-# for idx,feat in enumerate(movielens.df_userinfo.columns):
-#     if feat in movielens.user_numerical_attr:
-#         user_num_inds.append(idx)
-        
-# for idx,feat in enumerate(movielens.df_iteminfo.columns):
-#     if feat in movielens.item_numerical_attr:
-#         item_num_inds.append(idx)
-    
-
-
-# # In[45]:
-
-
-# resys=NovResysClassifier(0,0,
-#                          movielens.df_userinfo.values,0,user_num_inds,
-#                          movielens.df_iteminfo.values,0,item_num_inds,
-#                         movielens.df_rating.values)
-
-
-# # In[46]:
-
-
-# resys.preprocess()
-
-
-# # In[47]:
-
-
-# resys.precalculate()
-
-
-# # In[53]:
-
-
-# resys.fit(epochs=100)
 

@@ -1,17 +1,20 @@
-SEED=2000
+from NovResysClassifier import NovResysClassifier
+from sklearn.base import BaseEstimator, ClassifierMixin
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+import pickle
+import time
+import random
+import tensorflow as tf
+from scipy import spatial
+import os
+import scipy
+import copy
+from tqdm import * 
+from sklearn.preprocessing import LabelEncoder
 
 DATA_DIR='./ml-100k/'
-MODEL_DIR='./'
-
-DISTANT_TYPE=1#int(FLAGS.dist)
-NOVELTY_TYPE=0#int(FLAGS.nov)
-BASELINE=1#int(FLAGS.baseline)
-
-assert(DISTANT_TYPE==0 or DISTANT_TYPE==1)
-assert(NOVELTY_TYPE==0 or NOVELTY_TYPE==1)
-
-MLOBJ_PATH = 'ml_obj_%d.pkl'%(SEED)
-UTILOBJ_PATH='ml_util_%d_dis_%d.pkl'%(SEED,DISTANT_TYPE)
 
 class MovieLens:
     def load_raw_data(self):
@@ -75,20 +78,48 @@ class MovieLens:
     def __init__(self):
         self.rating_threshold = 3
         self.load_raw_data()
-        self.df_iteminfo["itemid"]=self.df_iteminfo["itemid"]-1
-        self.df_userinfo["uid"]=self.df_userinfo["uid"]-1
-        self.df_rating["itemid"]=self.df_rating["itemid"]-1
-        self.df_rating["uid"]=self.df_rating["uid"]-1
+        self.df_iteminfo["itemid"]=self.df_iteminfo["itemid"]
+        self.df_userinfo["uid"]=self.df_userinfo["uid"]
+        self.df_rating["itemid"]=self.df_rating["itemid"]
+        self.df_rating["uid"]=self.df_rating["uid"]
         self.feature_engineering()
         
         self.user_numerical_attr =  ["age"]
         self.item_numerical_attr = ["year", "month", "day"]
 
 
-# In[4]:
 
 
-movielens=MovieLens()
+def early_stopping(train_loss_history,val_loss_history):
+    if len(train_loss_history)!=0:
+        print(train_loss_history[-1])
+    if len(train_loss_history)!=0 and train_loss_history[-1]<0.48:
+        return 1,len(train_loss_history)-1
+    else:
+        return 0,-1
+
+movielens =MovieLens()
+
+user_num_inds=[]
+item_num_inds=[]
+for idx,feat in enumerate(movielens.df_userinfo.columns):
+    if feat in movielens.user_numerical_attr:
+        user_num_inds.append(idx)
+        
+for idx,feat in enumerate(movielens.df_iteminfo.columns):
+    if feat in movielens.item_numerical_attr:
+        item_num_inds.append(idx)
+    
+resys=NovResysClassifier(0,0,
+                         movielens.df_userinfo.values,0,user_num_inds,
+                         movielens.df_iteminfo.values,0,item_num_inds,
+                        movielens.df_rating.values)
+
+resys.preprocess()
+
+resys.precalculate()
+
+resys.fit(epochs=300,early_stop_method=early_stopping,val_size=5/7)
 
 
-# In[43]:
+

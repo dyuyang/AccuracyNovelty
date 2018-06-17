@@ -39,10 +39,15 @@ If you want to run the code, you should first download dataset of [Movielens 100
 
 ## Run the Model
 
-First, construct recommender system.
+Import class
 
 ```
 from NovResysClassifier import NovResysClassifier
+```
+
+First, construct recommender system.
+
+```
 resys=NovResysClassifier(0,0,
                          user_info,0,user_num_inds,
 
@@ -153,7 +158,7 @@ parameters:
 7. topk(int): size of topK recommendation list.
 8. limit(int): try how many times to find incorrect negtive sample while training.
 9. early_stop_method(function): if you want to use early stopping method to find best epoch, you should custom stopping function.
-   "early_stop_method" expects a callable with following function: func(epoch, train_loss_history,val_loss_history) 
+   "early_stop_method" expects a callable with following function: func(train_loss_history,val_loss_history) 
    and Returns(stop_flg, best_epoch). 
    train_loss_history: list of average training batch loss of every epoch. 
    val_loss_history: list of validation dataset loss of every epoch. 
